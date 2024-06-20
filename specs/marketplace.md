@@ -160,7 +160,7 @@ If too many slots are abandoned, the slot state SHOULD be changed to `failed`.
 
 Below is the smart contract lifecycle for a storage request:
 
-![image](../images/request-contract.png)
+![image](./images/request-contract.png)
 
 ### Slots
 Slots is a method used by the Codex network to distribute data chucks amongst storage providers.
