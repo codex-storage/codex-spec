@@ -264,11 +264,9 @@ Request and try to fill its slot(s). This decision SHOULD be done based on param
 If the node decides to ignore this Request, no action is necessary. If the node wants to try to fill a a slot, then 
 it MUST follow the remaining steps.
 
-Node MUST decide which Slot specified by slot's index it wants to try to fill in. Node MAY try filling multiple
-slots. In order to fill a slot, node first MUST download the slot's data using slot's root that can be retrieved
-from Manifest specified in `request.content.cid` (**TODO: Manifest RFC**). 
-This Request object can be retrieved from the smart contract using `getRequest(requestId)`.
-Then the node MUST generate proof over the downloaded data (**TODO: Proving RFC**).
+The Node MUST decide which Slot specified by slot's index it wants to try to fill in. The Node MAY try filling multiple
+slots. In order to fill a slot, the node MUST first download the slot's data using the CID of the manifest (**TODO: Manifest RFC**) and the index of  the slot. The CID is  specified in `request.content.cid`, which can be retrieved from the smart contract using `getRequest(requestId)`.
+Then the node MUST generate a proof over the downloaded data (**TODO: Proving RFC**).
 
 When the proof is ready it then MUST create a transaction for smart contract call `fillSlot()` with following REQUIRED:
  
