@@ -217,7 +217,7 @@ Determines the inverse probability that a proof is required in a period: $\frac{
 
 `nonce`
 
-- It SHOULD NOT be an empty byte array
+- It SHOULD be a random byte array.
 
 #### Renewal of Storage Request
 
@@ -228,11 +228,7 @@ need to retrieve the dataset to fill slots of the new Request.
 
 ### Withdrawing funds
 
-The client node SHOULD monitor the status of Requests that it created. The node can utilize on-chain state to
-fetch the list of the active Requests linked to the client node's ethereum address using function `myRequests()`, that
-returns array of `RequestId`s. This list is kept up to date by the smart contract itself.
-
-When Request reaches states `Cancelled` (not all slots filled after `expiry` timeout) or `Failed` (too many slots gets freed and data is non-recoverable)
+The client node SHOULD monitor the status of Requests that it created. When Request reaches states `Cancelled` (not all slots filled after `expiry` timeout)
 the client node SHOULD initiate withdrawal of the remaining funds from the contract using function `withdrawFunds(requestId)`.
 
  - `Cancelled` state MAY be detected using timeout specified from function `requestExpiresAt(requestId)` **and** not detecting emitted `RequestFulfilled(requestId)` event.
@@ -319,9 +315,10 @@ consider the node's operator configuration when making the decision. The storage
 the freed slot MAY also participate in the data repair, but my refilling the slot it **won't** recover its original collateral
 and needs to submit new collateral with the `fillSlot()` call.
 
-The repair process is the same as with the filling slots, with one difference that the node MUST use the erasure coding to 
-reconstruct the original dataset. As this requires retrieving more data of the dataset from the network, the node that 
-will successfully repair slot by filling the freed slot will be granted an additional reward. (**TODO: Implementation**)
+The repair process is the same as with the filling slots. If the original slot's dataset is not present in the network
+the node MAY use the erasure coding to reconstruct the original slot's dataset. 
+As this requires retrieving more data of the dataset from the network, the node that will successfully repair
+slot by filling the freed slot will be granted an additional reward. (**TODO: Implementation**)
 
 The repair process is then as follows:
 
@@ -332,9 +329,7 @@ The repair process is then as follows:
 
 ### Collecting funds
 
-A Storage Provider node SHOULD monitor Requests and slots it hosts. In case it needs to discover what slots it is hosting,
-for example, because the node had to restart, then it SHOULD use the contract call `mySlots()`, which returns array of `SlotID`s
-associated with the Ethereum address from which the contract call originates. This list is kept up to date by the smart contract itself.
+A Storage Provider node SHOULD monitor Requests and slots it hosts. 
 
 When a node slot's Requests reaches states `Cancelled`, `Finished` or `Failed` it SHOULD call the contract's `freeSlot(slotId)` function.
 These states can be detected using:
@@ -351,9 +346,9 @@ For each of these states, different funds are collected:
 
 ## Validator role
 
-Validator role represents nodes that verify that the Storage Provider nodes submit proofs when they are required.
-
-This is because in a blockchain we cannot act on things that **do not happen** and somebody needs to create a transaction 
+Validator role represents nodes that help to verify that the Storage Provider nodes submit proofs when they are required.  
+The decision maker around if proof was missed or not is the smart contract, validator only triggers the decision-making
+function on the smart contract. This is because in a blockchain we cannot act on things that **do not happen** and somebody needs to create a transaction 
 in order for the smart contract to act on it. The validator nodes get then rewarded for each time they correctly
 mark proof as missing.
 
