@@ -1,6 +1,5 @@
 # Codex Marketplace Spec
 
----
 title: CODEX-MARKETPLACE
 name: Codex Storage Marketplace
 status: raw
@@ -8,7 +7,7 @@ tags: codex
 editor: Dmitriy <dryajov@status.im>
 contributors:
 - Mark <mark@codex.storage>
-- Adam <adam.u@status.im>
+- Adam <adam@codex.storage>
 - Eric <eric@codex.storage>
 - Jimmy Debe <jimmy@status.im>
 ---
@@ -108,7 +107,7 @@ Time ran out │ │                              └─────────
        └──────────┘                                               
 ```
 
-![image](./images/request-contract.png)
+![image](./images/storeRequest.png)
 
 ## Client role
 
@@ -222,9 +221,9 @@ Determines the average frequency that a proof is required in a period: $\frac{1}
 #### Renewal of Storage Requests
 
 It should be noted that Marketplace does not support extending Requests. It is REQUIRED that if the user wants to 
-extend the Request's duration, somebody submits a new Request transaction with the same CID **well before the original
-Request finishes**. In this way, the data will be still persisted in the network at the time when new (or the current) storage providers 
-need to retrieve the dataset to fill slots of the new Request.
+extend the Request's duration, a new Request with the same CID must be [created](#Creating-storage-requests) **well before the original
+Request finishes**. In this way, the data will be still persisted in the network with enough time for new (or the current) storage providers 
+need to retrieve the dataset and fill slots of the new Request.
 
 ### Withdrawing funds
 
@@ -255,8 +254,8 @@ When a new Request is created, a `StorageRequested(requestId, ask, expiry)` even
  - `ask` - Specification of [Request parameters](#Creating-storage-requests).
  - `expiry` - Unix timestamp that specifies when the Request will be cancelled if all slots are not filled by then.
 
-It is then up to the Storage Provider node to decide based on the emitted parameters if it wants to participate in the 
-Request and try to fill its slot(s). This decision SHOULD be done based on parameters specified by the node operator.
+It is then up to the Storage Provider node to decide based on the emitted parameters and node's operator configuration
+if it wants to participate in the Request and try to fill its slot(s).
 If the node decides to ignore this Request, no action is necessary. If the node wants to try to fill a slot, then 
 it MUST follow the remaining steps.
 
@@ -282,13 +281,12 @@ generating a proof for, then the node SHOULD stop and choose a different non-fil
 has already been filled by another node.
 
 ### Proving
-
-Once a node fills a slot, it MUST periodically, yet non-deterministically provide proof to the smart contract that it 
-stores the data it should. Nodes SHOULD detect that a proof is required using the `isProofRequired(slotId)` or that it will
-be required using the `willProofBeRequired(slotId)` in case the node is in [downtime](https://github.com/codex-storage/codex-research/blob/41c4b4409d2092d0a5475aca0f28995034e58d14/design/storage-proof-timing.md).
+Once a node fills a slot, it MUST submit proofs to the smart contract when a challenge is issued by the contract.  
+Nodes SHOULD detect that a proof is required for the current period using the `isProofRequired(slotId)` function, 
+or that it will be required using the `willProofBeRequired(slotId)` function in the case that the [pointer is in downtime](https://github.com/codex-storage/codex-research/blob/41c4b4409d2092d0a5475aca0f28995034e58d14/design/storage-proof-timing.md).
 
 Once a node knows it has to provide a proof it MUST get the proof challenge using `getChallenge(slotId)` which then
-NEEDS to be incorporated into the proof generation as described in Proving RFC (**TODO: Proving RFC**).
+MUST be incorporated into the proof generation as described in Proving RFC (**TODO: Proving RFC**).
 
 When the proof is generated, it MUST be submitted with a transaction calling the `submitProof(slotId, proof)` function.
 
