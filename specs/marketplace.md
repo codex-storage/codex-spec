@@ -9,7 +9,7 @@ editor: Dmitriy <dryajov@status.im>
 contributors:
 - Mark <mark@codex.storage>
 - Adam <adam.u@status.im>
-- Eric <ericmastro@status.im>
+- Eric <eric@codex.storage>
 - Jimmy Debe <jimmy@status.im>
 ---
 
@@ -29,10 +29,10 @@ The keywords “MUST”, “MUST NOT”, “REQUIRED”, “SHALL”, “SHALL N
 | Terminology             | Description                                                                                                             |
 |-------------------------|-------------------------------------------------------------------------------------------------------------------------|
 | storage provider (SP) nodes | A node that provides storage services to the marketplace.                                                               |
-| validator nodes         | A node that checks for missing storage proofs and triggers contract call for a reward.                                  |
+| validator nodes         | A node that flags missing storage proofs for a reward.                                  |
 | client nodes            | The most common node that interacts with other nodes to store, locate and retrieve data.                                |
-| storage request         | Created by client node when it wants persist data on the network. Represents the dataset and persistence configuration. |
-| slots                   | Storage request dataset is split into several pieces (slots) that are then distributed over different SPs.              |
+| storage request         | Created by client node when it wants to persist data on the network. Represents the dataset and persistence configuration. |
+| slots                   | The storage request dataset is split into several pieces (slots) that are then distributed to and stored by SPs.              |
 
 ## Motivation
 
@@ -42,8 +42,8 @@ data persistence guarantees, and node storage incentives.
 An important component of the Codex network is its Marketplace. It is a place which mediates negotiations of all parties
  to provide persistence in the network. It also provides ways to enforce agreements and facilitate repair when a storage node drops out.
 
-The marketplace is defined by smart-contract deployed to EVM-compatible blockchain. It has several flows which are 
-linked with roles in the network and which the participating node takes upon itself. It can be one role or multiple at the same time.
+The marketplace is defined by a smart contract deployed to an EVM-compatible blockchain. It has several flows which are 
+linked with roles in the network and which the participating node takes upon itself. Each node can take on the responsibilities of one role or multiple at the same time.
 This specification describes these flows.
 
 The Marketplace handles storage requests, the storage slot state,
@@ -54,15 +54,15 @@ to support and implement proper flows. Otherwise, it won't be compatible with th
 
 ### Roles
 
-There are three main roles in the network - client, storage provider (SP) and validator. 
+There are three main roles in the network: client, storage provider (SP) and validator. 
 
-Client is a potentially short-lived node in the network that mainly interacts with the purpose of persisting
+A client is a potentially short-lived node in the network that mainly interacts with the purpose of persisting
 its data in the network. 
 
-Storage Provider is a long-term participant in the network that stores other data for profit. It needs to provide a proof
-to the smart contract that it possesses the data from time to time.
+A Storage Provider is a long-term participant in the network that stores other data for profit. It needs to provide a proof
+to the smart contract that it possesses the data from time-to-time.
 
-Validator validates that Storage Providers are correctly fulfilling their duties and that they provide proofs of storage
+A validator validates that SPs are correctly fulfilling their duties and that they provide proofs of storage
 on time.
 
 ## Storage Request Lifecycle
@@ -112,11 +112,11 @@ Time ran out │ │                              └─────────
 
 ## Client role
 
-The Client role represents nodes that mediate persisting data inside the Codex network. 
+The Client role represents nodes that introduce data to be persisted inside the Codex network. 
 
 There are two parts of a client role:
 
- - Requesting storage from the network - creating storage request.
+ - Requesting storage from the network by creating a storage request.
  - Withdrawing funds from storage requests.
 
 ### Creating storage requests
@@ -132,17 +132,17 @@ The final slot's roots and other metadata MUST be placed into a Manifest (**TODO
 be used as the `cid` of the stored dataset.
 
 After the dataset is prepared, a node MUST submit a transaction with the desired request parameters which are represented
-as a `Request` object and its sub-objects to function `requestStorage(request)`. Bellow are described its properties:
+as a `Request` object and its children to function `requestStorage(request)`. Below are described its properties:
 
 ```solidity
 struct Request {
   // The Codex node requesting storage
   address client;
 
-  // Ask describing parameters of Request
+  // Describes parameters of Request
   Ask ask;
   
-  // Content describing the dataset that will be hosted with the Request
+  // Describes the dataset that will be hosted with the Request
   Content content;
 
   // Timeout in seconds during which all the slots have to be filled, otherwise Request will get cancelled
@@ -153,17 +153,17 @@ struct Request {
 }
   
 struct Ask {
-  // Amount of token that will be awarded to storage providers for finishing the storage request.
+  // Amount of tokens that will be awarded to storage providers for finishing the storage request.
   // Reward is per slot per second.
   uint256 reward;
 
   // Amount of tokens required for collateral by storage providers
   uint256 collateral;
 
-  // Probability how often storage providers needs to submit proof of storage
+  // Frequency that storage providers need to submit proofs of storage
   uint256 proofProbability;
 
-  // Amount of desired time for storage request in seconds
+  // Total duration of the storage request in seconds
   uint256 duration;
 
   // The number of requested slots
@@ -201,25 +201,25 @@ An identifier used to locate the Manifest representing the dataset.
 
 `collateral`
 
-- Amount of tokens that the storage providers submit when they fill slots.
-- Collateral is then slashed or forfeited if the storage providers fail to provide the service requested by the Request (more information bellow).
+- Amount of tokens that the storage providers submits when they fill slots.
+- Collateral is then slashed or forfeited if the storage providers fail to provide the service requested by the Request (more information below).
 
 `proofProbability`
 
-Determines the inverse probability that a proof is required in a period: $\frac{1}{proofProbability}$
+Determines the average frequency that a proof is required in a period: $\frac{1}{proofProbability}$
 
-- Storage providers are required to provide proofs of storage to the marketplace smart contract when they are prompted to by the smart contract.
+- Storage providers are required to provide proofs of storage to the marketplace smart contract when they are challenged by the smart contract.
 - The frequency is stochastic in order to prevent hosts from only coming online when proofs are required, but it is affected by this parameter.
 
 `expiry`
 
-- The parameter is specified as duration in seconds, hence the final deadline timestamp is calculated at the moment when the transaction is mined. 
+- The parameter is specified as a duration in seconds, hence the final deadline timestamp is calculated at the moment when the transaction is mined. 
 
 `nonce`
 
 - It SHOULD be a random byte array.
 
-#### Renewal of Storage Request
+#### Renewal of Storage Requests
 
 It should be noted that Marketplace does not support extending Requests. It is REQUIRED that if the user wants to 
 extend the Request's duration, somebody submits a new Request transaction with the same CID **well before the original
@@ -228,17 +228,17 @@ need to retrieve the dataset to fill slots of the new Request.
 
 ### Withdrawing funds
 
-The client node SHOULD monitor the status of Requests that it created. When Request reaches states `Cancelled` (not all slots filled after `expiry` timeout)
-the client node SHOULD initiate withdrawal of the remaining funds from the contract using function `withdrawFunds(requestId)`.
+The client node SHOULD monitor the status of Requests that it created. When a Request reaches the `Cancelled` state (not all slots were filled before the `expiry` timeout),
+then the client node SHOULD initiate a withdrawal of the remaining funds from the contract using the function, `withdrawFunds(requestId)`.
 
- - `Cancelled` state MAY be detected using timeout specified from function `requestExpiresAt(requestId)` **and** not detecting emitted `RequestFulfilled(requestId)` event.
- - `Failed` state MAY be detected using `RequestFailed(requestId)` event emitted from the smart contract.
- - `Finished` state MAY be detected by setting timeout specified from function `getRequestEnd(requestId)`.
+- The `Cancelled` state MAY be detected using the timeout specified from function `requestExpiresAt(requestId)` **and** not detecting the emitted `RequestFulfilled(requestId)` event.
+ - The `Failed` state MAY be detected using `RequestFailed(requestId)` event emitted from the smart contract.
+ - The `Finished` state MAY be detected by setting timeout specified from function `getRequestEnd(requestId)`.
 
 ## Storage Provider role
 
 Storage Provider (SP) role represents nodes that persist data across the network by hosting Slots of Requests 
-that Client nodes requested.
+that the Client nodes requested.
 
 There are several parts to hosting a slot:
 
@@ -249,37 +249,37 @@ There are several parts to hosting a slot:
 
 ### Filling slot
 
-When new Request is created `StorageRequested(requestId, ask, expiry)` event is emitted with following properties: 
+When a new Request is created, a `StorageRequested(requestId, ask, expiry)` event is emitted with the following properties: 
 
  - `requestId` - ID of Request.
- - `ask` - Specification of Request parameters. For details see above.
+ - `ask` - Specification of [Request parameters](#Creating-storage-requests).
  - `expiry` - Unix timestamp that specifies when the Request will be cancelled if all slots are not filled by then.
 
 It is then up to the Storage Provider node to decide based on the emitted parameters if it wants to participate in the 
 Request and try to fill its slot(s). This decision SHOULD be done based on parameters specified by the node operator.
-If the node decides to ignore this Request, no action is necessary. If the node wants to try to fill a a slot, then 
+If the node decides to ignore this Request, no action is necessary. If the node wants to try to fill a slot, then 
 it MUST follow the remaining steps.
 
 The Node MUST decide which Slot specified by slot's index it wants to try to fill in. The Node MAY try filling multiple
 slots. In order to fill a slot, the node MUST first download the slot's data using the CID of the manifest (**TODO: Manifest RFC**) and the index of  the slot. The CID is  specified in `request.content.cid`, which can be retrieved from the smart contract using `getRequest(requestId)`.
 Then the node MUST generate a proof over the downloaded data (**TODO: Proving RFC**).
 
-When the proof is ready it then MUST create a transaction for smart contract call `fillSlot()` with following REQUIRED:
+When the proof is ready, it MUST then create a transaction for the smart contract call, `fillSlot()`, with the following REQUIRED parameters:
  
  - Parameters:
    - `requestId` - ID of the Request.
-   - `slotIndex` - Index that the node is trying to fill.
+   - `slotIndex` - Index of the slot that the node is trying to fill.
    - `proof` - `Groth16Proof` proof structure, generated over the slot's data.
- - The Ethereum address of the node from which the transaction originates MUST have [approval](https://docs.openzeppelin.com/contracts/2.x/api/token/erc20#IERC20-approve-address-uint256-) for transfer of at least the amount required as collateral for the Request on the ERC20 based token, that the network utilizes.
+ - The Ethereum address of the node from which the transaction originates MUST have [approval](https://docs.openzeppelin.com/contracts/2.x/api/token/erc20#IERC20-approve-address-uint256-) for transfer of at least the amount required as collateral for the Request on the ERC20-based token, that the network utilizes.
 
 If the proof is invalid, or the slot was already filled by another node, then the transaction
 will revert, otherwise a `SlotFilled(requestId, slotIndex)` event is emitted. If the transaction is successful, then the
-node SHOULD transition into a __proving__ state as it will need to submit proof of data possession when prompted by the
+node SHOULD transition into a __proving__ state as it will need to submit proofs of data possession when challenged by the
 contract.
 
-It should be noted that if the node sees the `SlotFilled` emitted for slot that he is downloading the dataset or 
-generating proof for, then node SHOULD stop and choose different non-filled slot to try to fill as the chosen slot
-was filled by other node.
+It should be noted that if the node sees the `SlotFilled` emitted for a slot that it is downloading the dataset or 
+generating a proof for, then the node SHOULD stop and choose a different non-filled slot to try to fill as the chosen slot
+has already been filled by another node.
 
 ### Proving
 
@@ -290,19 +290,19 @@ be required using the `willProofBeRequired(slotId)` in case the node is in [down
 Once a node knows it has to provide a proof it MUST get the proof challenge using `getChallenge(slotId)` which then
 NEEDS to be incorporated into the proof generation as described in Proving RFC (**TODO: Proving RFC**).
 
-When the proof is generated it MUST be submitted with a transaction calling `submitProof(slotId, proof)` function.
+When the proof is generated, it MUST be submitted with a transaction calling the `submitProof(slotId, proof)` function.
 
 #### Slashing
 
-There is a slashing scheme in place that is orchestrated by the smart contract to incentivize correct behavior
-and proper proof submissions by the storage provider nodes. This scheme is configured on smart contract level and is 
-the same for all the participants in the network. The concrete values of this scheme can be obtained by `getConfig()` contract call.
+There is a slashing scheme in place that is orchestrated by the smart contract to incentivise correct behaviour
+and proper proof submissions by the storage provider nodes. This scheme is configured on the smart contract level and is 
+the same for all the participants in the network. The concrete values of this scheme can be obtained by the `getConfig()` contract call.
 
-The slashing works in the following way:
+Slashing works in the following way:
 
  - Node MAY miss at most `config.collateral.slashCriterion` proofs before it is slashed.
  - It is then slashed `config.collateral.slashPercentage` percentage **of the originally asked collateral** (hence the slashing amount is always the same for the given request).
- - If the number of times the node was slashed reaches above `config.collateral.maxNumberOfSlashes`, then the slot is freed, the remaining of node's collateral is burned and the slot is offered to other nodes for repair. The Contract also emits the `SlotFreed(requestId, slotIndex)` event.
+ - If the number of times the node was slashed reaches above `config.collateral.maxNumberOfSlashes`, then the slot is freed, the remainder of the node's collateral is burned, and the slot is offered to other nodes for repair. The Contract also emits the `SlotFreed(requestId, slotIndex)` event.
 
 If the number of concurrent freed slots reaches above the `request.ask.maxSlotLoss`, then the dataset is assumed to be lost and the Request is failed. 
 The collateral of all the nodes that hosted Request's slots is burned and the event `RequestFailed(requestId)` is emitted.
@@ -312,54 +312,53 @@ The collateral of all the nodes that hosted Request's slots is burned and the ev
 When a slot is freed because of too many missed proofs, which SHOULD be detected by listening on the `SlotFreed(requestId, slotIndex)` event, then
 storage provider node can decide if it wants to participate in the repairing of the slot. The node SHOULD, similar to filling a slot,
 consider the node's operator configuration when making the decision. The storage provider node that originally hosted
-the freed slot MAY also participate in the data repair, but my refilling the slot it **won't** recover its original collateral
+the freed slot MAY also participate in the data repair, but by refilling the slot it **won't** recover its original collateral
 and needs to submit new collateral with the `fillSlot()` call.
 
 The repair process is the same as with the filling slots. If the original slot's dataset is not present in the network
 the node MAY use the erasure coding to reconstruct the original slot's dataset. 
 As this requires retrieving more data of the dataset from the network, the node that will successfully repair
-slot by filling the freed slot will be granted an additional reward. (**TODO: Implementation**)
+the slot by filling the freed slot will be granted an additional reward. (**TODO: Implementation**)
 
 The repair process is then as follows:
 
-1. Node detects `SlotFreed` event and decide to repair it.
-1. Node MUST download the required chunks and MUST use the [Reed-Soloman algorithm](https://hackmd.io/FB58eZQoTNm-dnhu0Y1XnA) to reconstruct the original slot's data.
-1. Node MUST generate proof over the reconstructed data.
-1. Node MUST submit transaction with call to `fillSlot()` with the same parameters and collateral allowance as described in the [Filling slot](#filling-slot).
+1. Node detects a `SlotFreed` event and decides to repair it.
+1. Node MUST download the required dataset CIDs and MUST use the [Reed-Soloman algorithm](https://hackmd.io/FB58eZQoTNm-dnhu0Y1XnA) to reconstruct the original slot's data.
+1. Node MUST generate a proof over the reconstructed data and challenge from the smart contract.
+1. Node MUST submit a transaction with a call to `fillSlot()` with the same parameters and collateral allowance, as described in [Filling slot](#filling-slot).
 
 ### Collecting funds
 
-A Storage Provider node SHOULD monitor Requests and slots it hosts. 
+A Storage Provider node SHOULD monitor Requests of the slots it hosts. 
 
-When a node slot's Requests reaches states `Cancelled`, `Finished` or `Failed` it SHOULD call the contract's `freeSlot(slotId)` function.
+When a Request reaches the `Cancelled`, `Finished` or `Failed` state, it SHOULD call the contract's `freeSlot(slotId)` function.
 These states can be detected using:
 
- - `Cancelled` state MAY be detected by setting timeout using `expiry` **and** not detecting `RequestFulfilled(requestId)` event. There is also `RequestCancelled` event emitted, but the node SHOULD NOT use it for asserting expiry as it is not guaranteed to be emitted at the time of expiry.
- - `Finished` state MAY be detected by setting timeout specified from function `getRequestEnd(requestId)`.
- - `Failed` state MAY be detected by listening to the `RequestFailed(requestId)` event emitted.
+ - `Cancelled` state MAY be detected by setting a timeout using `expiry` **and** not listening for the `RequestFulfilled(requestId)` event. There is also a `RequestCancelled` event emitted, but the node SHOULD NOT use it for asserting expiry as it is not guaranteed to be emitted at the time of expiry.
+ - `Finished` state MAY be detected by setting a timeout specified from function `getRequestEnd(requestId)`.
+ - `Failed` state MAY be detected by listening for the `RequestFailed(requestId)` event.
 
 For each of these states, different funds are collected:
 
-- For `Cancelled` the collateral is returned together with proportional payout based on time that the node actually hosted the dataset before expiry was reached.
-- For `Finished` the full reward for hosting the slot together with collateral is gathered.
-- For `Failed` no funds are collected as reward is returned to the client and collateral is burned, but this call removes the slot from the `mySlots()` tracking.
+- For `Cancelled`, the collateral is returned together with the proportional payout based on the time that the node actually hosted the dataset before expiry was reached.
+	- For `Finished`, the full reward for hosting the slot, together with the collateral, is gathered.
+	- For `Failed`, no funds are collected as the reward is returned to the client and the collateral is burned, but this call removes the slot from the `mySlots()` tracking.
 
 ## Validator role
 
-Validator role represents nodes that help to verify that the Storage Provider nodes submit proofs when they are required.  
-The decision maker around if proof was missed or not is the smart contract, validator only triggers the decision-making
-function on the smart contract. This is because in a blockchain we cannot act on things that **do not happen** and somebody needs to create a transaction 
-in order for the smart contract to act on it. The validator nodes get then rewarded for each time they correctly
-mark proof as missing.
+The Validator role represents nodes that help to verify that SP nodes submitted proofs when they were required.  
+The smart contract decides whether or not a proof was missed, while the validator triggers the decision-making
+function in the smart contract. This is because in a blockchain, a contract cannot change its state without a transaction and gas initiating the state change. The validator nodes then get rewarded for each time they correctly
+mark a proof as missing.
 
-Validator nodes MUST observe the slot's space by listening on the `SlotFilled` event, which SHOULD prompt the validator
-to add the slot to the watched slots. Then after the end of every period a validator has at most `config.proofs.timeout` seconds
-(config can be retrieved with `getConfig()`) to validate all the slots and if it finds a slot that missed its proof, then 
-it SHOULD submit transaction with call to the function `markProofAsMissing(slotId, period)` that validates the correctness
-and if right, will reward the validator with a reward.
+Validator nodes MUST observe the slot's space by listening for the `SlotFilled` event, which SHOULD prompt the validator
+to add the slot to the watched slots. Then after the end of every period, a validator has at most `config.proofs.timeout` seconds
+(config can be retrieved with `getConfig()`) to validate all the slots. If it finds a slot that missed its proof, then 
+it SHOULD submit a transaction calling the function `markProofAsMissing(slotId, period)`. This function validates the correctness of the claim,
+and if right, will send a reward to the validator.
 
-Validator MAY decide to validate only part of the slot's space when it detects that it can't keep up validating slots
-before the end of validation `timeout`.
+A Validator MAY decide to validate only part of the slot's space when it detects that it can't validate all watched slots
+before the end of the validation `timeout`.
 
 ## Copyright
 
