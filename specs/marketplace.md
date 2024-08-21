@@ -23,7 +23,7 @@ The document is intended for implementors of Codex nodes.
 The keywords “MUST”, “MUST NOT”, “REQUIRED”, “SHALL”, “SHALL NOT”, “SHOULD”, “SHOULD NOT”, “RECOMMENDED”, “MAY”, and “OPTIONAL” in this document are to be interpreted as described in [2119](https://www.ietf.org/rfc/rfc2119.txt).
 
 ### Definitions
-                                                                                                           |
+
 | Terminology               | Description                                                                                                               |
 |---------------------------|---------------------------------------------------------------------------------------------------------------------------|
 | Storage Provider (SP)      | A node in the Codex network that provides storage services to the marketplace.                                             |
