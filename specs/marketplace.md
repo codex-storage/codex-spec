@@ -214,8 +214,6 @@ It should be noted that if the SP node observes a `SlotFilled` event for the slo
 
 Once an SP successfully fills a slot, it MUST periodically, though non-deterministically, provide proofs to the smart contract that it is storing the data it committed to store. An SP node SHOULD detect whether a proof is required using the `isProofRequired(slotId)` smart contract function, or anticipate that a proof will be required using `willProofBeRequired(slotId)` in case the node is in [downtime](https://github.com/codex-storage/codex-research/blob/41c4b4409d2092d0a5475aca0f28995034e58d14/design/storage-proof-timing.md).
 
-> Including more details about _downtime_ might be beneficial.
-
 Once the SP knows it must provide a proof, it MUST retrieve the proof challenge using `getChallenge(slotId)`, which then NEEDS to be incorporated into the proof generation as described in the Proving RFC (**TODO: Proving RFC**).
 
 When the proof is generated, it MUST be submitted by calling the `submitProof(slotId, proof)` smart contract function.
@@ -272,8 +270,6 @@ The validator role is fulfilled by nodes that verify whether SPs have submitted 
 It is the smart contract that checks if the proof requested from an SP has been delivered. The validator's job is to trigger this check on the smart contract for SPs "observed" by the validator. To incentivize validators, they receive a reward each time they help identify a missing proof from an SP.
 
 Each time a validator observes the `SlotFilled` event, it adds the slot reported in the `SlotFilled` event to its list of watched slots. Then, at the end of each period, a validator has up to `config.proofs.timeout` seconds (a configuration parameter retrievable with `getConfig()`) to request proof validation from the smart contract for each slot in its list. If a slot lacks the required proof, the validator SHOULD call the `markProofAsMissing(slotId, period)` function on the smart contract. After confirming the missing proof for the slot with ID `slotId` in the given `period`, the `markProofAsMissing(slotId, period)` function will reward the validator.
-
-> It may be helpful to add an introduction or explanation regarding the periods and their occurrence.
 
 If validating all the slots observed by the validator is not feasible within the specified `timeout`, the validator MAY choose to validate only a subset of the observed slots.
 
