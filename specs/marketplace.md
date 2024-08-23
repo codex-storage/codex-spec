@@ -206,8 +206,6 @@ When the proof is ready, the SP MUST call `fillSlot()` on the smart contract wit
 - `proof` - The `Groth16Proof` proof structure, generated over the slot data.
 - The Ethereum address of the node from which the transaction originates MUST have [approval](https://docs.openzeppelin.com/contracts/2.x/api/token/erc20#IERC20-approve-address-uint256-) for the transfer of at least the amount of Tokens required as collateral for the request.
 
-> Also here, the last point might benefit from a more detailed explanation.
-
 If the proof delivered by the SP is invalid or the slot was already filled by another SP, then the transaction will be reverted. Otherwise, a `SlotFilled(requestId, slotIndex)` event is emitted. If the transaction is successful, the SP SHOULD transition into the __proving__ state, where it will need to submit proof of data possession when prompted by the smart contract.
 
 It should be noted that if the SP node observes a `SlotFilled` event for the slot it is currently downloading the dataset for or generating the proof for, it means that the slot has been filled by another node in the meantime. In response, the SP SHOULD stop its current operation and attempt to fill a different, unfilled slot.
