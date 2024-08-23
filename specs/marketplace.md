@@ -122,54 +122,27 @@ After the dataset is prepared, a client node MUST call the smart contract functi
 
 ```solidity
 struct Request {
-  // The Codex node requesting storage
   address client;
-
-  // Describes parameters of Request
   Ask ask;
-  
-  // Describes the dataset that will be hosted with the Request
   Content content;
-
-  // Timeout in seconds during which all the slots have to be filled, otherwise Request will get cancelled
   uint256 expiry;
-
-  // Random value to differentiate from other requests of same parameters
   byte32 nonce;
 }
   
 struct Ask {
-  // Amount of tokens that will be awarded to storage providers for finishing the storage request.
-  // Reward is per slot per second.
   uint256 reward;
-
-  // Amount of tokens required for collateral by storage providers
   uint256 collateral;
-
-  // Frequency that storage providers need to submit proofs of storage
   uint256 proofProbability;
-
-  // Total duration of the storage request in seconds
   uint256 duration;
-
-  // The number of requested slots
   uint64 slots;
-
-  // Amount of storage per slot in bytes
   uint256 slotSize;
-
-  // Max slots that can be lost without data considered to be lost
   uint64 maxSlotLoss; 
 }
 
 struct Content {
-  // Content identifier
   string cid;
-
-  // Merkle root of the dataset, used to verify storage proofs
   byte32 merkleRoot;
 }
-
 ```
 
 The the table below provides the description of the `Request` and the associated types attributes:
