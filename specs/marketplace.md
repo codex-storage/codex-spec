@@ -30,15 +30,15 @@ The keywords “MUST”, “MUST NOT”, “REQUIRED”, “SHALL”, “SHALL N
 | Validator                  | A node that assists in identifying missing storage proofs.                                                                |
 | Client                     | A node that interacts with other nodes in the Codex network to store, locate, and retrieve data.                           |
 | Storage Request or Request | A request created by a client node to persist data on the Codex network.                                                  |
-| Slot or Storage Slot       | A space allocated by the storage request to store a single chunk of the data related to this storage request.              |
-| Smart Contract             | A smart contract associated with marketplace functionality.                                                               |
+| Slot or Storage Slot       | A space allocated by the storage request to store a piece of the request's dataset.              |
+| Smart Contract             | A smart contract implementing the marketplace functionality.                                                               |
 | Token               | ERC20-based token used within the Codex network.     |
 
 ## Motivation
 
 The Codex network aims to create a peer-to-peer storage engine with robust data durability, data persistence guarantees, and a comprehensive incentive structure.
 
-The marketplace is a critical component of the Codex network, serving as a platform where all involved parties interact to ensure data persistence. It also provides mechanisms to enforce agreements and facilitate data repair when Storage Nodes fail to fulfill their duties.
+The marketplace is a critical component of the Codex network, serving as a platform where all involved parties interact to ensure data persistence. It provides mechanisms to enforce agreements and facilitate data repair when SPs fail to fulfill their duties.
 
 Implemented as a smart contract on an EVM-compatible blockchain, the marketplace enables various scenarios where nodes assume one or more roles to maintain a reliable persistence layer for users. This specification details these interactions.
 
@@ -166,7 +166,7 @@ The the table below provides the description of the `Request` and the associated
 
 #### Renewal of Storage Requests
 
-It should be noted that the marketplace does not support extending requests. It is REQUIRED that if the user wants to extend the duration of a request, a new request with the same CID must be [created](#Creating-storage-requests) **before the original request completes**. This ensures that the data will be still persisted in the network with enough time for new (or the current) SPs to retrieve the dataset and fill slots of the new Request.
+It should be noted that the marketplace does not support extending requests. It is REQUIRED that if the user wants to extend the duration of a request, a new request with the same CID must be [created](#Creating-storage-requests) **before the original request completes**. 
 
 This ensures that the data will continue to persist in the network at the time when the new (or existing) SPs need to retrieve the complete dataset to fill the slots of the new request.
 
