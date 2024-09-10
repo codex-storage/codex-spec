@@ -1,5 +1,4 @@
-# Codex Marketplace Spec
-
+---
 title: CODEX-MARKETPLACE
 name: Codex Storage Marketplace
 status: raw
@@ -14,13 +13,27 @@ contributors:
 
 ## Abstract
 
-Codex Marketplace and its interactions are defined by a smart contract deployed on an EVM-compatible blockchain. This specification describes these interactions for the various roles within the network.
+Codex Marketplace and its interactions are defined by a smart contract deployed on an EVM-compatible blockchain.
+This specification describes these interactions for the various roles within the network.
 
 The document is intended for implementors of Codex nodes.
 
+## Motivation
+
+The Codex network aims to create a peer-to-peer storage engine with robust data durability, data persistence guarantees, and a comprehensive incentive structure.
+
+The marketplace is a critical component of the Codex network, serving as a platform where all involved parties interact to ensure data persistence. It provides mechanisms to enforce agreements and facilitate data repair when SPs fail to fulfill their duties.
+
+Implemented as a smart contract on an EVM-compatible blockchain, the marketplace enables various scenarios where nodes assume one or more roles to maintain a reliable persistence layer for users. This specification details these interactions.
+
+The marketplace contract manages storage requests, maintains the state of allocated storage slots, and orchestrates SP rewards, collaterals, and storage proofs.
+
+A node that wishes to participate in the Codex persistence layer MUST implement one or more roles described in this document.
+
 ## Semantics 
 
-The keywords “MUST”, “MUST NOT”, “REQUIRED”, “SHALL”, “SHALL NOT”, “SHOULD”, “SHOULD NOT”, “RECOMMENDED”, “MAY”, and “OPTIONAL” in this document are to be interpreted as described in [2119](https://www.ietf.org/rfc/rfc2119.txt).
+The keywords “MUST”, “MUST NOT”, “REQUIRED”, “SHALL”, “SHALL NOT”, “SHOULD”,
+“SHOULD NOT”, “RECOMMENDED”, “MAY”, and “OPTIONAL” in this document are to be interpreted as described in [2119](https://www.ietf.org/rfc/rfc2119.txt).
 
 ### Definitions
 
@@ -34,17 +47,6 @@ The keywords “MUST”, “MUST NOT”, “REQUIRED”, “SHALL”, “SHALL N
 | Smart Contract             | A smart contract implementing the marketplace functionality.                                                               |
 | Token               | ERC20-based token used within the Codex network.     |
 
-## Motivation
-
-The Codex network aims to create a peer-to-peer storage engine with robust data durability, data persistence guarantees, and a comprehensive incentive structure.
-
-The marketplace is a critical component of the Codex network, serving as a platform where all involved parties interact to ensure data persistence. It provides mechanisms to enforce agreements and facilitate data repair when SPs fail to fulfill their duties.
-
-Implemented as a smart contract on an EVM-compatible blockchain, the marketplace enables various scenarios where nodes assume one or more roles to maintain a reliable persistence layer for users. This specification details these interactions.
-
-The marketplace contract manages storage requests, maintains the state of allocated storage slots, and orchestrates SP rewards, collaterals, and storage proofs.
-
-A node that wishes to participate in the Codex persistence layer MUST implement one or more roles described in this document.
 
 ### Roles
 
