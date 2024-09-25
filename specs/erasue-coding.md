@@ -34,8 +34,28 @@ The Codex client performerasure coding locally before provding dataset to the ma
 Before data is provided to storage providers on the marketplace,
 clients must do the following:
 
-1.  
+1.  Create data chunks from the data
+2.  Encode each chunk with Reed Solomon erasue coding, more explained below
+3.  Derive an CID from encoded chunks share on the marketplace
+4.  Error correction by validator nodes once storage contract begins
 
+ 
+### Create Data chunks
+
+After the user has choosen the prefered data for storage through the marketplace,
+the Codex client will divide this data into chunks , e.g. 
+Including the [manifest](manifest), the data chucks will be encoded based on the following parameters:
+
+```js
+struct encodingParms {
+  ecK: int
+  ecM: int
+  rounded: int
+  steps: int
+  blocksCount: int
+  strategy: 
+}
+```
 
 
 ## Security Considerations
