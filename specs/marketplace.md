@@ -247,7 +247,7 @@ The repair process proceeds as follows:
 1. The SP observes the `SlotFreed` event and decides to repair the slot.
 2. The SP MUST download the chunks of data required to reconstruct the freed slot's data. The node MUST use the [Reed-Solomon algorithm](https://hackmd.io/FB58eZQoTNm-dnhu0Y1XnA) to reconstruct the missing data.
 3. The SP MUST generate proof over the reconstructed data.
-4. The SP MUST call the `fillSlot()` smart contract function with the same parameters and collateral allowance as described in the [Filling Slots](#filling-slot) section.
+4. The SP MUST call the `fillSlot()` smart contract function with the same parameters and collateral allowance as described in the [Filling Slots](#filling-slots) section.
 
 Below is a diagram depicting the proving and repair process:
 
