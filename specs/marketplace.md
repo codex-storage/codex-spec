@@ -26,7 +26,7 @@ data persistence guarantees, and a comprehensive incentive structure.
 The marketplace is a critical component of the Codex network,
 serving as a platform where all involved parties interact to ensure data persistence.
 It provides mechanisms to enforce agreements and
-facilitate data repair when storage providers, wil be abbrivated to SP in this document,
+facilitate data repair when storage providers, abbreviated to SP in this document,
 fail to fulfill their duties.
 
 Implemented as a smart contract on an EVM-compatible blockchain,
@@ -43,7 +43,7 @@ more roles to maintain a reliable persistence layer for users.
 | Storage Request or Request | A request created by a client node to persist data on the Codex network.                                                  |
 | Slot or Storage Slot       | A space allocated by the storage request to store a piece of the request's dataset.              |
 | Smart Contract             | A smart contract implementing the marketplace functionality.                                                               |
-| Token               | ERC20-based token used within the Codex network.     |
+| token               | ERC20-based token used within the Codex network.     |
 
 ## Semantics 
 
@@ -51,10 +51,10 @@ The keywords “MUST”, “MUST NOT”, “REQUIRED”, “SHALL”, “SHALL N
 “SHOULD NOT”, “RECOMMENDED”, “MAY”, and “OPTIONAL” in this document are to be interpreted as described in [2119](https://www.ietf.org/rfc/rfc2119.txt).
 
 The marketplace contract manages storage requests,
-maintains the state of allocated storage slots, and orchestrates SP rewards,
+maintains the state of allocated storage slots, orchestrates SP node rewards,
 collaterals, and storage proofs.
 A node that wishes to participate in the Codex persistence layer MUST implement one or
-more roles described in this document.
+more roles described below.
 
 ### Roles
 
@@ -93,9 +93,8 @@ To create a request to persist a dataset on the Codex network, client nodes MUST
 The data chunks are then encoded with the erasure coding method and the provided input parameters.
 
 The applied erasure coding method, used on data being persisted all SPs,
-SHOULD be the [Reed-Solomon algorithm](https://hackmd.io/FB58eZQoTNm-dnhu0Y1XnA).
-If the client node uses a different algorithm, once storage request is made,
-SP will not be able to submit valid proofs.
+MUST be the [Reed-Solomon algorithm](https://hackmd.io/FB58eZQoTNm-dnhu0Y1XnA).
+When dataset is encoded with different algorithm, the dataset will be inaccessible.
 
 After encoding, data chunks are distributed over a number of slots.
 The final slot roots and other metadata MUST be placed into a `Manifest` (TODO: Manifest RFC).
@@ -141,8 +140,8 @@ The the table below provides the description of the `Request` and the associated
 | `expiry` | `uint256` | Timeout in seconds during which all the slots have to be filled, otherwise request will get cancelled. The final deadline timestamp is calculated at the moment the transaction is mined. |
 | `nonce` | `byte32` | Random value to differentiate from other requests of same parameters. It SHOULD be a random byte array. |
 | `reward` | `uint256` | Amount of tokens that will be awarded to SPs for finishing the storage request. It MUST be an amount of tokens offered per slot per second. The Ethereum address that submits the `requestStorage()` transaction MUST have [approval](https://docs.openzeppelin.com/contracts/2.x/api/token/erc20#IERC20-approve-address-uint256-) for the transfer of at least an equivalent amount in tokens. |
-| `collateral` | `uint256` | The amount of tokens that SPs MUST submit when they fill slots. Collateral is then slashed or forfeited if SPs fail to provide the service requested by the storage request (more information in the [Slashing](#slashing) section). |
-| `proofProbability` | `uint256` | Determines the average frequency that a proof is required within a period: $\frac{1}{proofProbability}$. SPs are required to provide proofs of storage to the marketplace smart contract when challenged by the smart contract. To prevent hosts from only coming online when proofs are required, the frequency at which proofs are requested from SPs is stochastic and is influenced by the `proofProbability` parameter. |
+| `collateral` | `uint256` | The amount of tokens that SP nodes MUST submit when they fill slots. Collateral is then slashed or forfeited if SPs fail to provide the service requested by the storage request (more information in the [Slashing](#slashing) section). |
+| `proofProbability` | `uint256` | Determines the average frequency that a proof is required within a period: $\frac{1}{proofProbability}$. SPs are required to provide proofs of storage to the marketplace smart contract when challenged by the smart contract. To prevent hosts from only coming online when proofs are required, the frequency at which proofs are requested from SP nodes is stochastic and is influenced by the `proofProbability` parameter. |
 | `duration` | `uint256` | Total duration of the storage request in seconds. |
 | `slots` | `uint64` | The number of requested slots. The slots will all have the same size. |
 | `slotSize` | `uint256` | Amount of storage per slot in bytes. |
@@ -179,6 +178,49 @@ The following tasks need to be considered when hosting a slot:
 - Collecting request reward and collateral
 
 ### Filling Slots
+
+Below is a diagram depicting states of a storage request including filling slots, proving, repair states:
+
+```text
+                      ┌───────────┐                               
+                      │ Cancelled │                               
+                      └───────────┘                               
+                            ▲                                     
+                            │ Not all                             
+                            │ Slots filled                        
+                            │                                     
+    ┌───────────┐    ┌──────┴─────────────┐           ┌─────────┐ 
+    │ Submitted ├───►│ Slots Being Filled ├──────────►│ Started │ 
+    └───────────┘    └────────────────────┘ All Slots └────┬────┘ 
+                                            Filled         │      
+                                                           │      
+                                   ┌───────────────────────┘      
+                           Proving ▼                              
+    ┌────────────────────────────────────────────────────────────┐
+    │                                                            │
+    │                 Proof submitted                            │
+    │       ┌─────────────────────────► All good                 │
+    │       │                                                    │
+    │ Proof required                                             │
+    │       │                                                    │
+    │       │         Proof missed                               │
+    │       └─────────────────────────► After some time slashed  │
+    │                                   eventually Slot freed    │
+    │                                                            │
+    └────────┬─┬─────────────────────────────────────────────────┘
+             │ │                                      ▲           
+             │ │                                      │           
+             │ │ SP kicked out and Slot freed ┌───────┴────────┐  
+All good     │ ├─────────────────────────────►│ Repair process │  
+Time ran out │ │                              └────────────────┘  
+             │ │                                                  
+             │ │ Too many Slots freed         ┌────────┐          
+             │ └─────────────────────────────►│ Failed │          
+             ▼                                └────────┘          
+       ┌──────────┐                                               
+       │ Finished │                                               
+       └──────────┘                                               
+```
 
 When a new request is created, the `StorageRequested(requestId, ask, expiry)` event is emitted with the following properties:
 
@@ -248,49 +290,6 @@ The repair process proceeds as follows:
 2. The SP MUST download the chunks of data required to reconstruct the freed slot's data. The node MUST use the [Reed-Solomon algorithm](https://hackmd.io/FB58eZQoTNm-dnhu0Y1XnA) to reconstruct the missing data.
 3. The SP MUST generate proof over the reconstructed data.
 4. The SP MUST call the `fillSlot()` smart contract function with the same parameters and collateral allowance as described in the [Filling Slots](#filling-slots) section.
-
-Below is a diagram depicting the proving and repair process:
-
-```text
-                      ┌───────────┐                               
-                      │ Cancelled │                               
-                      └───────────┘                               
-                            ▲                                     
-                            │ Not all                             
-                            │ Slots filled                        
-                            │                                     
-    ┌───────────┐    ┌──────┴─────────────┐           ┌─────────┐ 
-    │ Submitted ├───►│ Slots Being Filled ├──────────►│ Started │ 
-    └───────────┘    └────────────────────┘ All Slots └────┬────┘ 
-                                            Filled         │      
-                                                           │      
-                                   ┌───────────────────────┘      
-                           Proving ▼                              
-    ┌────────────────────────────────────────────────────────────┐
-    │                                                            │
-    │                 Proof submitted                            │
-    │       ┌─────────────────────────► All good                 │
-    │       │                                                    │
-    │ Proof required                                             │
-    │       │                                                    │
-    │       │         Proof missed                               │
-    │       └─────────────────────────► After some time slashed  │
-    │                                   eventually Slot freed    │
-    │                                                            │
-    └────────┬─┬─────────────────────────────────────────────────┘
-             │ │                                      ▲           
-             │ │                                      │           
-             │ │ SP kicked out and Slot freed ┌───────┴────────┐  
-All good     │ ├─────────────────────────────►│ Repair process │  
-Time ran out │ │                              └────────────────┘  
-             │ │                                                  
-             │ │ Too many Slots freed         ┌────────┐          
-             │ └─────────────────────────────►│ Failed │          
-             ▼                                └────────┘          
-       ┌──────────┐                                               
-       │ Finished │                                               
-       └──────────┘                                               
-```
 
 ### Collecting Funds
 
