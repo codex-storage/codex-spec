@@ -33,17 +33,6 @@ Implemented as a smart contract on an EVM-compatible blockchain,
 the marketplace enables various scenarios where nodes assume one or
 more roles to maintain a reliable persistence layer for users.
 
-### Definitions
-
-| Terminology               | Description                                                                                                               |
-|---------------------------|---------------------------------------------------------------------------------------------------------------------------|
-| Storage Provider (SP)      | A node in the Codex network that provides storage services to the marketplace.                                             |
-| Validator                  | A node that assists in identifying missing storage proofs.                                                                |
-| Client                     | A node that interacts with other nodes in the Codex network to store, locate, and retrieve data.                           |
-| Storage Request or Request | A request created by a client node to persist data on the Codex network.                                                  |
-| Slot or Storage Slot       | A space allocated by the storage request to store a piece of the request's dataset.              |
-| Smart Contract             | A smart contract implementing the marketplace functionality.                                                               |
-| token               | ERC20-based token used within the Codex network.     |
 
 ## Semantics 
 
@@ -55,6 +44,18 @@ maintains the state of allocated storage slots, orchestrates SP node rewards,
 collaterals, and storage proofs.
 A node that wishes to participate in the Codex persistence layer MUST implement one or
 more roles described below.
+
+### Definitions
+
+| Terminology               | Description                                                                                                               |
+|---------------------------|---------------------------------------------------------------------------------------------------------------------------|
+| Storage Provider (SP)      | A node in the Codex network that provides storage services to the marketplace.                                             |
+| Validator                  | A node that assists in identifying missing storage proofs.                                                                |
+| Client                     | A node that interacts with other nodes in the Codex network to store, locate, and retrieve data.                           |
+| Storage Request or Request | A request created by a client node to persist data on the Codex network.                                                  |
+| Slot or Storage Slot       | A space allocated by the storage request to store a piece of the request's dataset.              |
+| Smart Contract             | A smart contract implementing the marketplace functionality.                                                               |
+| token               | ERC20-based token used within the Codex network.     |
 
 ### Roles
 
