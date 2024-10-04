@@ -9,8 +9,8 @@ contributors:
 
 ## Abstract
 
-This specification describes the erasue coding technique used in the Codex protocol.
-Erasue coding is used by the Codex client to encode datasets being presented to the [marketplace]().
+This specification describes the erasue coding technique used in the Codex network.
+Erasue coding is used by the Codex client node to encode a dataset that will be stored via the [CODEX-MARKETPLACE](./marketplace.md).
 
 ## Background
 
@@ -18,8 +18,8 @@ Codex uses storage proofs to determine whether a storage provider is storing a c
 Storage providers agree to store dataset for a period of time and
 store an encoded dataset provded by the requester.
 Using erasure coding,
-client nodes will be able to restore datasets thatare abandoned by storage providers.
-Also validator nodes are able to detect whether data is missing within a slot.
+client nodes, storage requester, can be assured of data retrievablity after data that abandoned by storage providers.
+
 
 ## Semantics
 
@@ -27,14 +27,16 @@ The keywords “MUST”, “MUST NOT”, “REQUIRED”, “SHALL”, “SHALL N
 “SHOULD”, “SHOULD NOT”, “RECOMMENDED”, “MAY”, and
 “OPTIONAL” in this document are to be interpreted as described in [2119](https://www.ietf.org/rfc/rfc2119.txt).
 
-The Codex client performerasure coding locally before provding dataset to the marketplace.
+The Codex client node performs erasure coding locally before provding the dataset to the marketplace.
+Client nodes MUST use the Reed Solomon algorithm when encoding data.
+If other algorithims is used, other nodes within the network will not be able to process the data.
 
-Before data is provided to storage providers on the marketplace,
-clients must do the following:
+The erasure coding process is utilized by all node roles on the network, see [CODEX-MARKETPLACE](./marketplace.md) for more.
+Below is the steps where erasure coding is used:
 
-1.  Prepare dataset
-2.  Encode data with Reed Solomon erasue coding, more explained below
-3.  Derive an CID from encoded chunks, share on the marketplace
+1.  Prepare prefered data
+2.  Encode the data with Reed Solomon erasue coding technique
+3.  Derive an CID from encoded chunks and share on the marketplace
 4.  Error correction by validator nodes once storage contract begins
 
 ### Preparing Data
@@ -45,21 +47,22 @@ Including the [manifest](manifest), the data chucks will be encoded based on the
 
 ```js
 struct encodingParms {
-  ecK: int
-  ecM: int
-  rounded: int
-  steps: int
-  blocksCount: int
-  strategy: 
+  ecK: int,
+  ecM: int,
+  rounded: int,
+  steps: int,
+  blocksCount: int,
+  strategy: enum
 }
 ```
 ### Encoding Data
 
 With Reed-Solomon algorithm, extra data chunks need to be created for the dataset.
 Parity blocks is added to the chucks of data before encoding.
-Once data is encoded, it is prepared to be transmitted.
+Once data is encoded, it is prepared to be transmitted or placed into slots by the client node.
+Slots containing encoded data chunks are located by the CID and downloaded by storage providers.
 
-Below is the content of the dag-pb protobuf message 
+Below is the content of the dag-pb protobuf message:
 
 ```protobuf
    Message VerificationInfo {
@@ -93,9 +96,13 @@ There are two node roles that will need to decode data.
 
 - Client nodes to read data
 - Validator nodes to verfiy storage providers are storing data as per the marketplace
+- During repair of slots
+
+Using the CID of a dataset, a client node can read the data during a storage request.
+The client node will download all slots accioscated to the dataset to perform erasure decoding.
 
 To ensure data is being stored by storage providers, the smart contracts REQUIRES proof of storage to be submitted.
-If a window is missed, vaildators can 
+Once submitted by an SP node, validator check proofs are valid by decoding data. 
 
 ## Security Considerations
 
@@ -112,7 +119,10 @@ Effectively the block size for Merkle proofs should equal the shard size of the 
 
 If data is not encryted before entering the encoding process, nodes, including storage providers, will be able to access the data. This may lead to privacy concerns and the misuse of data.
 
-
 ## Copyright
 
+Copyright and related rights waived via [CC0](https://creativecommons.org/publicdomain/zero/1.0/).
+
 ## References
+
+- [CODEX-MARKETPLACE](./marketplace.md)
