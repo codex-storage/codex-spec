@@ -54,7 +54,7 @@ more roles described below.
 | client                     | A node that interacts with other nodes in the Codex network to store, locate, and retrieve data.                           |
 | storage request or request | A request created by a client node to persist data on the Codex network.                                                  |
 | slot or storage slot       | A space allocated by the storage request to store a piece of the request's dataset.              |
-| marketplace contract             | A smart contract implementing the marketplace functionality.                                                               |
+| smart contract             | A set of rules implementing the marketplace functionality on a blockchain.                               |
 | token               | ERC20-based token used within the Codex network.     |
 
 ### Roles
