@@ -49,12 +49,12 @@ more roles described below.
 
 | Terminology               | Description                                                                                                               |
 |---------------------------|---------------------------------------------------------------------------------------------------------------------------|
-| Storage Provider (SP)      | A node in the Codex network that provides storage services to the marketplace.                                             |
-| Validator                  | A node that assists in identifying missing storage proofs.                                                                |
-| Client                     | A node that interacts with other nodes in the Codex network to store, locate, and retrieve data.                           |
-| Storage Request or Request | A request created by a client node to persist data on the Codex network.                                                  |
-| Slot or Storage Slot       | A space allocated by the storage request to store a piece of the request's dataset.              |
-| Smart Contract             | A smart contract implementing the marketplace functionality.                                                               |
+| storage provider (SP)      | A node in the Codex network that provides storage services to the marketplace.                                             |
+| validator                  | A node that assists in identifying missing storage proofs.                                                                |
+| client                     | A node that interacts with other nodes in the Codex network to store, locate, and retrieve data.                           |
+| storage request or request | A request created by a client node to persist data on the Codex network.                                                  |
+| slot or storage slot       | A space allocated by the storage request to store a piece of the request's dataset.              |
+| marketplace contract             | A smart contract implementing the marketplace functionality.                                                               |
 | token               | ERC20-based token used within the Codex network.     |
 
 ### Roles
@@ -141,7 +141,7 @@ The the table below provides the description of the `Request` and the associated
 | `expiry` | `uint256` | Timeout in seconds during which all the slots have to be filled, otherwise request will get cancelled. The final deadline timestamp is calculated at the moment the transaction is mined. |
 | `nonce` | `byte32` | Random value to differentiate from other requests of same parameters. It SHOULD be a random byte array. |
 | `reward` | `uint256` | Amount of tokens that will be awarded to SP nodes for finishing the storage request. It MUST be an amount of tokens offered per slot per second. The Ethereum address that submits the `requestStorage()` transaction MUST have [approval](https://docs.openzeppelin.com/contracts/2.x/api/token/erc20#IERC20-approve-address-uint256-) for the transfer of at least an equivalent amount in tokens. |
-| `collateral` | `uint256` | The amount of tokens that SP nodes MUST submit when they fill slots. Collateral is then slashed or forfeited if SP nodes fail to provide the service requested by the storage request (more information in the [Slashing](#slashing) section). |
+| `collateral` | `uint256` | The amount of tokens that SP nodes MUST submit when they fill slots. Collateral is then slashed or forfeited if SP nodes fail to provide the service requested by the storage request (more information in the [Slashing](#slashing) section). The Ethereum address that submits the `fillSlot()` transaction MUST have [approval](https://docs.openzeppelin.com/contracts/2.x/api/token/erc20#IERC20-approve-address-uint256-) for the transfer of at least an amount required for collateral. |
 | `proofProbability` | `uint256` | Determines the average frequency that a proof is required within a period: $\frac{1}{proofProbability}$. SP nodes are required to provide proofs of storage to the marketplace smart contract when challenged by the smart contract. To prevent hosts from only coming online when proofs are required, the frequency at which proofs are requested from SP nodes is stochastic and is influenced by the `proofProbability` parameter. |
 | `duration` | `uint256` | Total duration of the storage request in seconds. |
 | `slots` | `uint64` | The number of requested slots. The slots will all have the same size. |
@@ -177,8 +177,6 @@ The following tasks need to be considered when hosting a slot:
 - Proving
 - Repairing a slot
 - Collecting request reward and collateral
-
-### Filling Slots
 
 Below is a diagram depicting states of a storage request including filling slots, proving, repair states:
 
@@ -222,6 +220,8 @@ Time ran out │ │                              └─────────
        │ Finished │                                               
        └──────────┘                                               
 ```
+
+### Filling Slots
 
 When a new request is created, the `StorageRequested(requestId, ask, expiry)` event is emitted with the following properties:
 
