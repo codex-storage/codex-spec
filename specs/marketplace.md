@@ -257,8 +257,8 @@ In response, the SP node SHOULD stop its current operation and attempt to fill a
 
 ### Proving
 
-
-Once an SP node fills a slot, it MUST submit proofs to the smart contract when a challenge is issued by the contract. SP nodes SHOULD detect that a proof is required for the current period using the `isProofRequired(slotId)` function, 
+Once an SP node fills a slot, it MUST submit proofs to the smart contract when a challenge is issued by the contract.
+SP nodes SHOULD detect that a proof is required for the current period using the `isProofRequired(slotId)` function, 
 or that it will be required using the `willProofBeRequired(slotId)` function in the case that the [pointer is in downtime](https://github.com/codex-storage/codex-research/blob/41c4b4409d2092d0a5475aca0f28995034e58d14/design/storage-proof-timing.md).
 
 Once an SP node knows it has to provide a proof,
