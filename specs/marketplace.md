@@ -243,7 +243,6 @@ When the proof is ready, the SP node MUST make a transaction calling `fillSlot()
 - `requestId` - the ID of the request.
 - `slotIndex` - the slot index that the node wants to fill.
 - `proof` - the `Groth16Proof` proof structure, generated over the slot data.
-- `collateral` - The amount of tokens required to fill a slot
 
 The Ethereum address, of the SP node from which the transaction originates, MUST have [approval](https://docs.openzeppelin.com/contracts/2.x/api/token/erc20#IERC20-approve-address-uint256-) for the transfer of at least the amount of required tokens.
 
