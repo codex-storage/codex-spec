@@ -140,7 +140,7 @@ struct Ask {
 }
 
 struct Content {
-  string cid;
+  bytes cid;
   byte32 merkleRoot;
 }
 ```
@@ -161,7 +161,7 @@ The the table below provides the description of the `Request` and the associated
 | `slots` | `uint64` | The number of requested slots. The slots will all have the same size. |
 | `slotSize` | `uint256` | Amount of storage per slot in bytes. |
 | `maxSlotLoss` | `uint64` |  Max slots that can be lost without data considered to be lost. |
-| `cid`     | `string` | An identifier used to locate the Manifest representing the dataset. It MUST be a [CIDv1](https://github.com/multiformats/cid#cidv1), SHA-256 [multihash](https://github.com/multiformats/multihash) and the data it represents SHOULD be discoverable in the network, otherwise the request will be eventually canceled. |
+| `cid`     | `bytes` | An identifier used to locate the Manifest representing the dataset. It MUST be a [CIDv1](https://github.com/multiformats/cid#cidv1), SHA-256 [multihash](https://github.com/multiformats/multihash) and the data it represents SHOULD be discoverable in the network, otherwise the request will be eventually canceled. |
 | `merkleRoot` | `byte32` | Merkle root of the dataset, used to verify storage proofs |
 
 #### Renewal of Storage Requests
