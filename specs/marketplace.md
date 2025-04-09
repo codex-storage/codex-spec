@@ -228,8 +228,7 @@ There is a slashing scheme orchestrated by the smart contract to incentivize cor
 
 The slashing works as follows:
 
-- An SP node MAY miss up to `config.collateral.slashCriterion` proofs before being slashed.
-- It is then slashed by `config.collateral.slashPercentage` **of the originally required collateral** (hence the slashing amount is always the same for a given request).
+- When SP misses a proof and a validator trigger detection of this event using the `markProofAsMissing()` call, the SP is slashed by `config.collateral.slashPercentage` **of the originally required collateral** (hence the slashing amount is always the same for a given request).
 - If the number of slashes exceeds `config.collateral.maxNumberOfSlashes`, the slot is freed, the remaining collateral is burned, and the slot is offered to other nodes for repair. The smart contract also emits the `SlotFreed(requestId, slotIndex)` event.
 
 If, at any time, the number of freed slots exceeds the value specified by the `request.ask.maxSlotLoss` parameter, the dataset is considered lost, and the request is deemed _failed_. The collateral of all SPs that hosted the slots associated with the storage request is burned, and the `RequestFailed(requestId)` event is emitted.
@@ -271,7 +270,7 @@ In a blockchain, a contract cannot change its state without a transaction and ga
 
 The validator role is fulfilled by nodes that help to verify that SPs have submitted the required storage proofs. 
 
-It is the smart contract that checks if the proof requested from an SP has been delivered. The validator only triggers the decision-making function in the smart contract. To incentivize validators, they receive a reward each time they correctly mark a proof as missing.
+It is the smart contract that checks if the proof requested from an SP has been delivered. The validator only triggers the decision-making function in the smart contract. To incentivize validators, they receive a reward each time they correctly mark a proof as missing corresponding to the percentage of the slashed collateral defined by `config.collateral.validatorRewardPercentage`.
 
 Each time a validator observes the `SlotFilled` event, it SHOULD add the slot reported in the `SlotFilled` event to the validator's list of watched slots. Then, after the end of each period, a validator has up to `config.proofs.timeout` seconds (a configuration parameter retrievable with `getConfig()`) to validate all the slots. If a slot lacks the required proof, the validator SHOULD call the `markProofAsMissing(slotId, period)` function on the smart contract. This function validates the correctness of the claim, and if right, will send a reward to the validator.
 
