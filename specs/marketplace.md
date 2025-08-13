@@ -157,7 +157,7 @@ The the table below provides the description of the `Request` and the associated
 | `reward` | `uint256` | Amount of tokens that will be awarded to SPs for finishing the storage request. It MUST be an amount of Tokens offered per slot per second. The Ethereum address that submits the `requestStorage()` transaction MUST have [approval](https://docs.openzeppelin.com/contracts/2.x/api/token/erc20#IERC20-approve-address-uint256-) for the transfer of at least an equivalent amount in Tokens. |
 | `collateral` | `uint256` | The amount of tokens that SPs submit when they fill slots. Collateral is then slashed or forfeited if SPs fail to provide the service requested by the storage request (more information in the [Slashing](#Slashing) section). |
 | `proofProbability` | `uint256` | Determines the average frequency that a proof is required within a period: $\frac{1}{proofProbability}$. SPs are required to provide proofs of storage to the marketplace smart contract when challenged by the smart contract. To prevent hosts from only coming online when proofs are required, the frequency at which proofs are requested from SPs is stochastic and is influenced by the `proofProbability` parameter. |
-| `duration` | `uint256` | Total duration of the storage request in seconds. |
+| `duration` | `uint256` | Total duration of the storage request in seconds. It MUST NOT exceed the limit specified in the configuration `config.requestDurationLimit`. |
 | `slots` | `uint64` | The number of requested slots. The slots will all have the same size. |
 | `slotSize` | `uint256` | Amount of storage per slot in bytes. |
 | `maxSlotLoss` | `uint64` |  Max slots that can be lost without data considered to be lost. |
