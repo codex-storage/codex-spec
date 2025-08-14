@@ -125,18 +125,18 @@ struct Request {
   address client;
   Ask ask;
   Content content;
-  uint256 expiry;
+  uint64 expiry;
   byte32 nonce;
 }
   
 struct Ask {
-  uint256 reward;
-  uint256 collateral;
   uint256 proofProbability;
-  uint256 duration;
+  uint256 pricePerBytePerSecond;
+  uint256 collateralPerByte;
   uint64 slots;
-  uint256 slotSize;
-  uint64 maxSlotLoss; 
+  uint64 slotSize;
+  uint64 duration;
+  uint64 maxSlotLoss;
 }
 
 struct Content {
@@ -152,14 +152,14 @@ The the table below provides the description of the `Request` and the associated
 | `client` | `address` | The Codex node requesting storage. |
 | `ask` | `Ask` | Parameters of Request. |
 | `content` | `Content` | The dataset that will be hosted with the storage request. |
-| `expiry` | `uint256` | Timeout in seconds during which all the slots have to be filled, otherwise Request will get cancelled. The final deadline timestamp is calculated at the moment the transaction is mined. |
+| `expiry` | `uint64` | Timeout in seconds during which all the slots have to be filled, otherwise Request will get cancelled. The final deadline timestamp is calculated at the moment the transaction is mined. |
 | `nonce` | `byte32` | Random value to differentiate from other requests of same parameters. It SHOULD be a random byte array. |
-| `reward` | `uint256` | Amount of tokens that will be awarded to SPs for finishing the storage request. It MUST be an amount of Tokens offered per slot per second. The Ethereum address that submits the `requestStorage()` transaction MUST have [approval](https://docs.openzeppelin.com/contracts/2.x/api/token/erc20#IERC20-approve-address-uint256-) for the transfer of at least an equivalent amount in Tokens. |
-| `collateral` | `uint256` | The amount of tokens that SPs submit when they fill slots. Collateral is then slashed or forfeited if SPs fail to provide the service requested by the storage request (more information in the [Slashing](#Slashing) section). |
+| `pricePerBytePerSecond` | `uint256` | Amount of tokens that will be awarded to SPs for finishing the storage request. It MUST be an amount of Tokens offered per slot per second per byte. The Ethereum address that submits the `requestStorage()` transaction MUST have [approval](https://docs.openzeppelin.com/contracts/2.x/api/token/erc20#IERC20-approve-address-uint256-) for the transfer of at least an equivalent amount of full reward (`pricePerBytePerSecond * duration * slots * slotSize`) in Tokens. |
+| `collateralPerByte` | `uint256` | The amount of tokens per byte of slot's size that SPs submit when they fill slots. Collateral is then slashed or forfeited if SPs fail to provide the service requested by the storage request (more information in the [Slashing](#Slashing) section). |
 | `proofProbability` | `uint256` | Determines the average frequency that a proof is required within a period: $\frac{1}{proofProbability}$. SPs are required to provide proofs of storage to the marketplace smart contract when challenged by the smart contract. To prevent hosts from only coming online when proofs are required, the frequency at which proofs are requested from SPs is stochastic and is influenced by the `proofProbability` parameter. |
-| `duration` | `uint256` | Total duration of the storage request in seconds. It MUST NOT exceed the limit specified in the configuration `config.requestDurationLimit`. |
+| `duration` | `uint64` | Total duration of the storage request in seconds. It MUST NOT exceed the limit specified in the configuration `config.requestDurationLimit`. |
 | `slots` | `uint64` | The number of requested slots. The slots will all have the same size. |
-| `slotSize` | `uint256` | Amount of storage per slot in bytes. |
+| `slotSize` | `uint64` | Amount of storage per slot in bytes. |
 | `maxSlotLoss` | `uint64` |  Max slots that can be lost without data considered to be lost. |
 | `cid`     | `bytes` | An identifier used to locate the Manifest representing the dataset. It MUST be a [CIDv1](https://github.com/multiformats/cid#cidv1), SHA-256 [multihash](https://github.com/multiformats/multihash) and the data it represents SHOULD be discoverable in the network, otherwise the request will be eventually canceled. |
 | `merkleRoot` | `byte32` | Merkle root of the dataset, used to verify storage proofs |
@@ -207,7 +207,7 @@ When the proof is ready, the SP MUST call `fillSlot()` on the smart contract wit
 - `slotIndex` - the slot index that the node wants to fill.
 - `proof` - the `Groth16Proof` proof structure, generated over the slot data.
 
-The Ethereum address of the SP node from which the transaction originates MUST have [approval](https://docs.openzeppelin.com/contracts/2.x/api/token/erc20#IERC20-approve-address-uint256-) for the transfer of at least the amount of Tokens required as collateral for the request.
+The Ethereum address of the SP node from which the transaction originates MUST have [approval](https://docs.openzeppelin.com/contracts/2.x/api/token/erc20#IERC20-approve-address-uint256-) for the transfer of at least the amount of Tokens required as collateral for the slot (`collateralPerByte * slotSize`).
 
 If the proof delivered by the SP is invalid or the slot was already filled by another SP, then the transaction will revert. Otherwise, a `SlotFilled(requestId, slotIndex)` event is emitted. If the transaction is successful, the SP SHOULD transition into the __proving__ state, where it will need to submit proof of data possession when challenged by the smart contract.
 
@@ -224,7 +224,7 @@ When the proof is generated, it MUST be submitted by calling the `submitProof(sl
 
 #### Slashing
 
-There is a slashing scheme orchestrated by the smart contract to incentivize correct behavior and proper proof submissions by SPs. This scheme is configured at the smart contract level and applies uniformly to all participants in the network. The configuration of the slashing scheme can be obtained via the `getConfig()` contract call.
+There is a slashing scheme orchestrated by the smart contract to incentivize correct behavior and proper proof submissions by SPs. This scheme is configured at the smart contract level and applies uniformly to all participants in the network. The configuration of the slashing scheme can be obtained via the `configuration()` contract call.
 
 The slashing works as follows:
 
@@ -242,9 +242,10 @@ The repair process is similar to filling slots. If the original slot dataset is 
 The repair process proceeds as follows:
 
 1. The SP observes the `SlotFreed` event and decides to repair the slot.
-2. The SP MUST download the chunks of data required to reconstruct the freed slot's data. The node MUST use the [Reed-Solomon algorithm](https://hackmd.io/FB58eZQoTNm-dnhu0Y1XnA) to reconstruct the missing data.
-3. The SP MUST generate proof over the reconstructed data.
-4. The SP MUST call the `fillSlot()` smart contract function with the same parameters and collateral allowance as described in the [Filling Slots](#filling-slot) section.
+2. The SP MUST reserve the slot with the `reserveSlot(requestId, slotIndex)` call. For more information see the [Filling Slots](#filling-slots) section.
+3. The SP MUST download the chunks of data required to reconstruct the freed slot's data. The node MUST use the [Reed-Solomon algorithm](https://hackmd.io/FB58eZQoTNm-dnhu0Y1XnA) to reconstruct the missing data.
+4. The SP MUST generate proof over the reconstructed data.
+5. The SP MUST call the `fillSlot()` smart contract function with the same parameters and collateral allowance as described in the [Filling Slots](#filling-slot) section.
 
 ### Collecting Funds
 
@@ -272,7 +273,7 @@ The validator role is fulfilled by nodes that help to verify that SPs have submi
 
 It is the smart contract that checks if the proof requested from an SP has been delivered. The validator only triggers the decision-making function in the smart contract. To incentivize validators, they receive a reward each time they correctly mark a proof as missing corresponding to the percentage of the slashed collateral defined by `config.collateral.validatorRewardPercentage`.
 
-Each time a validator observes the `SlotFilled` event, it SHOULD add the slot reported in the `SlotFilled` event to the validator's list of watched slots. Then, after the end of each period, a validator has up to `config.proofs.timeout` seconds (a configuration parameter retrievable with `getConfig()`) to validate all the slots. If a slot lacks the required proof, the validator SHOULD call the `markProofAsMissing(slotId, period)` function on the smart contract. This function validates the correctness of the claim, and if right, will send a reward to the validator.
+Each time a validator observes the `SlotFilled` event, it SHOULD add the slot reported in the `SlotFilled` event to the validator's list of watched slots. Then, after the end of each period, a validator has up to `config.proofs.timeout` seconds (a configuration parameter retrievable with `configuration()`) to validate all the slots. If a slot lacks the required proof, the validator SHOULD call the `markProofAsMissing(slotId, period)` function on the smart contract. This function validates the correctness of the claim, and if right, will send a reward to the validator.
 
 If validating all the slots observed by the validator is not feasible within the specified `timeout`, the validator MAY choose to validate only a subset of the observed slots.
 
